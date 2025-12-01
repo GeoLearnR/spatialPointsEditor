@@ -22,9 +22,12 @@ Imports:
 Suggests:
     mapview,
     mapedit,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 URL: https://github.com/GeoLearnR/spatialPointsEditor
 BugReports: https://github.com/GeoLearnR/spatialPointsEditor/issues
 Depends: 
     R (>= 3.5)
 Config/testthat/edition: 3
+VignetteBuilder: knitr

@@ -1,0 +1,357 @@
+---
+title: "Getting Started with spatialPointsEditor"
+author: "Dr. Alavi"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with spatialPointsEditor}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+```{r setup}
+library(spatialPointsEditor)
+library(sf)
+```
+
+## Introduction
+
+The **spatialPointsEditor** package provides interactive tools to visualize and correct coordinates of `sf` POINT objects in R. This vignette demonstrates how to use the main functions to edit spatial point data with visual feedback.
+
+## Why Use This Package?
+
+Sometimes spatial point data has incorrect coordinates due to:
+
+- GPS errors during field data collection
+- Geocoding mistakes
+- Manual data entry errors
+- Points falling outside expected boundaries
+- Coordinate system transformation issues
+
+The **spatialPointsEditor** makes it easy to identify and correct these errors interactively.
+
+## Installation
+
+```{r eval=FALSE}
+# Install from GitHub
+devtools::install_github("GeoLearnR/spatialPointsEditor")
+```
+
+## Quick Start Example
+
+### Load Sample Data
+
+The package includes example data:
+
+```{r}
+# Load example points
+data(example_points)
+
+# View the data
+print(example_points)
+```
+
+### View Points on Map
+
+Before editing, let's visualize the points:
+
+```{r eval=FALSE}
+library(mapview)
+mapview(example_points)
+```
+
+### Edit Points Interactively
+
+Launch the interactive editor:
+
+```{r eval=FALSE}
+# Edit the points
+corrected_points <- edit_spatial_points(
+  sf_data = example_points,
+  id_column = "id"
+)
+```
+
+The editor window will open with:
+
+- **Map View**: Interactive map showing your points
+- **Data Table**: Editable table of coordinates
+- **Modification Log**: Track all changes
+- **Help Tab**: Detailed instructions
+
+### How to Edit
+
+There are **three ways** to edit coordinates:
+
+#### Method 1: Drag and Drop on Map
+
+1. Click a point to select it (turns red)
+2. Drag the red marker to the correct location
+3. Changes are saved automatically
+
+#### Method 2: Edit in Data Table
+
+1. Go to the "Data Table" tab
+2. Double-click a longitude or latitude cell
+3. Enter the correct value
+4. Press Enter
+
+#### Method 3: Manual Entry
+
+1. Click a point to select it
+2. In the sidebar, enter new coordinates
+3. Click "Apply Coordinates"
+
+### Compare Changes
+
+After editing, compare the original and corrected data:
+
+```{r eval=FALSE}
+# Compare original vs edited points
+comparison <- compare_edits(
+  original = example_points,
+  edited = corrected_points,
+  id_column = "id"
+)
+
+# View the comparison
+print(comparison)
+
+# Print summary statistics
+print_edit_summary(comparison)
+```
+
+The comparison shows:
+
+- Original and new coordinates
+- Distance moved for each point
+- Which points were modified
+
+## Real-World Example
+
+### Loading Your Own Data
+
+```{r eval=FALSE}
+# Load shapefile
+my_points <- st_read("data/field_sites.shp")
+
+# Or load from other formats
+my_points <- st_read("data/locations.gpkg")
+my_points <- st_read("data/points.geojson")
+```
+
+### Complete Workflow
+
+```{r eval=FALSE}
+# 1. View original data
+mapview(my_points)
+
+# 2. Identify incorrect points visually
+
+# 3. Edit interactively
+corrected <- edit_spatial_points(my_points, id_column = "site_id")
+
+# 4. Review changes
+comparison <- compare_edits(my_points, corrected, id_column = "site_id")
+print_edit_summary(comparison)
+
+# View only modified points
+modified_only <- comparison[comparison$Modified, ]
+print(modified_only)
+
+# 5. Save corrected data
+st_write(corrected, "data/field_sites_corrected.shp", delete_dsn = TRUE)
+
+# 6. Export change log
+write.csv(comparison, "data/corrections_log.csv", row.names = FALSE)
+```
+
+## Editor Features
+
+### Undo/Redo
+
+- Click **"↶ Undo"** to revert changes
+- Click **"↷ Redo"** to reapply changes
+- Unlimited undo/redo history
+
+### Reset Points
+
+- **Reset Selected Point**: Revert one point to original coordinates
+- **Reset All Points**: Revert all points to original coordinates
+
+### Modification Tracking
+
+The **Modification Log** tab shows:
+
+- Original coordinates
+- New coordinates
+- Change in longitude/latitude
+- Distance moved (in meters)
+
+Download the log as CSV for documentation.
+
+### Visual Feedback
+
+Points are color-coded:
+
+- 🔵 **Blue**: Original, unmodified points
+- 🟠 **Orange**: Modified points
+- 🔴 **Red**: Currently selected point (draggable)
+
+## Advanced Usage
+
+### Return Only Modified Points
+
+```{r eval=FALSE}
+# Get only the points that were changed
+modified_only <- edit_spatial_points(
+  sf_data = my_points,
+  id_column = "id",
+  return_modified = TRUE
+)
+```
+
+### Working with Different CRS
+
+The editor automatically handles coordinate reference systems:
+
+```{r eval=FALSE}
+# Data in UTM Zone 33N
+utm_points <- st_transform(example_points, crs = 32633)
+
+# Edit (automatically converts to WGS84 for display)
+edited_utm <- edit_spatial_points(utm_points, id_column = "id")
+
+# Result is returned in original CRS (UTM 33N)
+st_crs(edited_utm)
+```
+
+### Batch Editing Multiple Datasets
+
+```{r eval=FALSE}
+# Edit multiple related datasets
+sites <- edit_spatial_points(sites_sf, id_column = "site_id")
+plots <- edit_spatial_points(plots_sf, id_column = "plot_id")
+trees <- edit_spatial_points(trees_sf, id_column = "tree_id")
+```
+
+## Tips and Best Practices
+
+### Before Editing
+
+1. **Backup your data** before making changes
+2. **Document why** corrections are needed
+3. **Use meaningful IDs** to track points
+
+### During Editing
+
+1. **Zoom in** on the map for precision
+2. **Use satellite imagery** to verify locations
+3. **Check the modification log** regularly
+4. **Use undo** if you make a mistake
+
+### After Editing
+
+1. **Review all changes** in the comparison table
+2. **Save the change log** for documentation
+3. **Verify** corrected points make sense
+4. **Document** the editing process in your workflow
+
+## Common Use Cases
+
+### 1. Correcting GPS Errors
+
+Field-collected GPS points often have accuracy issues:
+
+```{r eval=FALSE}
+# Field data with GPS errors
+field_data <- st_read("gps_points.gpkg")
+
+# Edit to align with actual features (roads, buildings)
+corrected_field <- edit_spatial_points(field_data, id_column = "point_id")
+```
+
+### 2. Fixing Geocoding Mistakes
+
+Geocoded addresses may be incorrect:
+
+```{r eval=FALSE}
+# Geocoded locations
+addresses <- st_read("geocoded_addresses.shp")
+
+# Manually correct misplaced points
+fixed_addresses <- edit_spatial_points(addresses, id_column = "address_id")
+```
+
+### 3. Adjusting Points to Boundaries
+
+Ensure points fall within expected boundaries:
+
+```{r eval=FALSE}
+# Plot centers that should be inside forest boundary
+plot_centers <- st_read("plot_centers.shp")
+
+# Adjust points that fall outside
+adjusted_plots <- edit_spatial_points(plot_centers, id_column = "plot_num")
+```
+
+## Troubleshooting
+
+### Editor Won't Open
+
+```{r eval=FALSE}
+# Make sure all dependencies are installed
+install.packages(c("shiny", "leaflet", "sf", "DT", "shinyjs"))
+```
+
+### Points Not Showing on Map
+
+Check your CRS:
+
+```{r eval=FALSE}
+# Check CRS
+st_crs(my_points)
+
+# If missing, set it
+st_crs(my_points) <- 4326  # WGS84
+```
+
+### Can't Edit Specific Columns
+
+Only longitude and latitude can be edited in the data table. Other attributes are read-only.
+
+## Getting Help
+
+- **Package documentation**: `?edit_spatial_points`
+- **GitHub issues**: https://github.com/GeoLearnR/spatialPointsEditor/issues
+- **Help tab** in the editor interface
+
+## Citation
+
+If you use this package in your research, please cite:
+
+```{r eval=FALSE}
+citation("spatialPointsEditor")
+```
+
+## Summary
+
+The **spatialPointsEditor** package makes it easy to:
+
+✅ Visually identify incorrect coordinates  
+✅ Edit points interactively with drag-and-drop  
+✅ Track all modifications with undo/redo  
+✅ Export detailed change logs  
+✅ Work with any CRS  
+
+For more examples and updates, visit: https://github.com/GeoLearnR/spatialPointsEditor
+```

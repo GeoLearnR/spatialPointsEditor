@@ -3,3 +3,9 @@
 .RData
 .Ruserdata
 *.Rproj
+inst/doc
+/doc/
+/Meta/
+.httr-oauth
+.DS_Store
+.quarto
