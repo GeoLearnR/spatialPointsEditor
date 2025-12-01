@@ -1,0 +1,185 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# spatialPointsEditor
+
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
+
+The **spatialPointsEditor** package provides interactive tools to visualize and correct coordinates of `sf` POINT objects in R. It's designed for situations where spatial data has incorrect coordinates that need to be manually corrected with visual feedback.
+
+## Features
+
+- 🗺️ **Interactive Map Interface**: Visualize points on OpenStreetMap or satellite imagery
+- 🖱️ **Drag-and-Drop Editing**: Click and drag markers to new positions
+- 📊 **Multiple Edit Methods**: Edit via map, data table, or manual coordinate entry
+- ↩️ **Undo/Redo**: Full history tracking with unlimited undo/redo
+- 📝 **Modification Logging**: Track all changes with detailed before/after comparison
+- 🎨 **Visual Feedback**: Color-coded points (original, modified, selected)
+- 💾 **Export Changes**: Download a CSV log of all coordinate corrections
+- 🌐 **CRS Support**: Automatic handling of coordinate reference systems
+
+## Installation
+
+You can install the development version of spatialPointsEditor from [GitHub](https://github.com/) with:
+
+```{r eval=FALSE}
+# install.packages("devtools")
+devtools::install_github("GeoLearnR/spatialPointsEditor")
+```
+
+## Quick Start
+
+```{r eval=FALSE}
+library(spatialPointsEditor)
+library(sf)
+
+# Create sample points (some with incorrect coordinates)
+points <- st_sf(
+  id = 1:3,
+  name = c("San Francisco", "Los Angeles", "New York"),
+  geometry = st_sfc(
+    st_point(c(-122.4194, 37.7749)),
+    st_point(c(-118.2437, 34.0522)),
+    st_point(c(-75, 35))  # Wrong coordinates for NYC!
+  ),
+  crs = 4326
+)
+
+# Launch interactive editor
+corrected_points <- edit_spatial_points(points, id_column = "id")
+
+# Compare changes
+comparison <- compare_edits(points, corrected_points, id_column = "id")
+print(comparison)
+```
+
+## Main Functions
+
+### `edit_spatial_points()`
+
+Launch an interactive Shiny application to edit point coordinates:
+
+```{r eval=FALSE}
+corrected_data <- edit_spatial_points(
+  sf_data = my_points,
+  id_column = "point_id",
+  return_modified = FALSE
+)
+```
+
+**Parameters:**
+- `sf_data`: An sf object with POINT geometry
+- `id_column`: Name of the ID column (optional, auto-generated if NULL)
+- `return_modified`: If TRUE, returns only modified points
+
+### `compare_edits()`
+
+Compare original and edited datasets:
+
+```{r eval=FALSE}
+comparison <- compare_edits(
+  original = original_points,
+  edited = corrected_points,
+  id_column = "id"
+)
+
+# View summary
+print_edit_summary(comparison)
+
+# View only modified points
+modified <- comparison[comparison$Modified, ]
+```
+
+## Example Workflow
+
+```{r eval=FALSE}
+library(spatialPointsEditor)
+library(sf)
+
+# 1. Load your spatial data
+my_points <- st_read("data/field_points.shp")
+
+# 2. View points to identify errors
+library(mapview)
+mapview(my_points)
+
+# 3. Edit incorrect coordinates interactively
+corrected_points <- edit_spatial_points(my_points, id_column = "site_id")
+
+# 4. Review changes
+comparison <- compare_edits(my_points, corrected_points, id_column = "site_id")
+print_edit_summary(comparison)
+
+# 5. Save corrected data
+st_write(corrected_points, "data/field_points_corrected.shp")
+
+# 6. Export change log
+write.csv(comparison, "data/coordinate_corrections_log.csv", row.names = FALSE)
+```
+
+## Use Cases
+
+- Correcting GPS errors from field data collection
+- Fixing geocoding mistakes
+- Adjusting points that fall outside expected boundaries
+- Manual quality control of spatial datasets
+- Educational demonstrations of coordinate systems
+
+## Interface Overview
+
+The editor provides four main tabs:
+
+1. **Map View**: Interactive map with draggable markers
+2. **Data Table**: Editable table of coordinates
+3. **Modification Log**: Real-time tracking of all changes
+4. **Help**: Detailed usage instructions
+
+### Color Coding
+
+- 🔵 **Blue**: Original, unmodified points
+- 🟠 **Orange**: Modified points
+- 🔴 **Red**: Currently selected point (draggable)
+
+## Requirements
+
+- R 
+- shiny 
+- leaflet 
+- sf 
+- DT 
+- shinyjs 
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT License
+
+## Citation
+
+If you use this package in your research, please cite:
+
+```
+[Seyed Jalil Alavi] ([2025]). spatialPointsEditor: Interactive Editor for Spatial Point Coordinates. 
+R package version 0.1.0. https://github.com/GeoLearnR/spatialPointsEditor
+```
+
+## Support
+
+For issues, questions, or suggestions, please [open an issue](https://github.com/GeoLearnR/spatialPointsEditor/issues) on GitHub.
